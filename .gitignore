@@ -1,0 +1,8 @@
+.DS_Store
+*.pyc
+npm-debug.log
+gingle.egg-info
+node_modules/
+build/
+dist/
+
