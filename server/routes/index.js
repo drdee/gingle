@@ -21,12 +21,12 @@ exports.index = function(req, res){
  */
 
 exports.feature_list = function(req, res) {
-    opts = $.extend(options, {
+    var mingleRequest = $.extend({}, options, {
         path: options['path'] + req.params.feature_id + '.xml'
     });
     
     var response = '';
-    var get = https.get(opts, function(res2) {
+    var get = https.get(mingleRequest, function(res2) {
         console.log('STATUS: ' + res2.statusCode);
         console.log('HEADERS: ' + JSON.stringify(res2.headers));
         res2.setEncoding('utf8');
