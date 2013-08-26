@@ -21,14 +21,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
 import requests
+from BeautifulSoup import BeautifulSoup
 
 server = 'http://localhost:3000'
 
 def list_user_acceptance_criteria(args):
-	feature_id, task_id = args.feature_id.split('.')
-	payload = {'feature_id': feature_id, 'task_id': task_id}
-	response = requests.get('%s/%s' % (server, payload.get('feature_id')), payload)
-	print response.json()
+	feature_id = args.feature_id
+	response = requests.get('%s/%s' % (server, feature_id))
+	soup = BeautifulSoup(response.text)
+	table = soup.find('tbody')
+	rows = table.findAll('tr')
+	for tr in rows:
+  		cols = tr.findAll('td')
+  		for td in cols:
+      			text = ''.join(td.find(text=True))
+			text = text.replace('&nbsp;', ' ')
+      			print text + ' | ',
+  		print
 
 def add_user_criteria(args):
         feature_id, task_id = args.feature_id.split('.')
@@ -67,7 +76,6 @@ def main(cli_args=None):
 	else:
 		args = parser.parse_args()
 	args.func(args)
-	print args
 
 if __name__ == '__main__':
 	main()
