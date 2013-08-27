@@ -32,33 +32,33 @@ package_file = open(join(HERE, 'gingle/__init__.py'), 'rU')
 __version__ = re.sub(
     r".*\b__version__\s+=\s+'([^']+)'.*",
     r'\1',
-    [ line.strip() for line in package_file if '__version__' in line ].pop(0)
+    [line.strip() for line in package_file if '__version__' in line].pop(0)
 )
 
 
 setup(
-    name             = 'gingle',
-    version          = __version__,
-    description      = 'Git <-> Mingle integration',
-    long_description = readme,
-	url              = 'https://gerrit.wikimedia.org/gitweb/analytics/gingle.git',
-    
-    author           = 'Diederik van Liere',
-    author_email     = 'dvanliere@wikimedia.org',
-    
-    packages = find_packages(exclude="server"),
-    entry_points     = { 'console_scripts':['gingle = gingle:main'] },
-	install_requires = [
-		'requests', 'argparse',
-	],
+    name='gingle',
+    version=__version__,
+    description='Git <-> Mingle integration',
+    long_description=readme,
+    url='https://gerrit.wikimedia.org/gitweb/analytics/gingle.git',
+
+    author='Diederik van Liere',
+    author_email='dvanliere@wikimedia.org',
+
+    packages=find_packages(exclude="server"),
+    entry_points={'console_scripts': ['gingle = gingle:main']},
+        install_requires=[
+                'requests', 'argparse', 'BeautifulSoup',
+        ],
 
     # install_requires = [
     #     "bunch  >= 1.0",
     #     "PyYAML >= 3.10",
     # ],
-    
-    keywords         = ['git', 'mingle', 'user acceptance criteria'],
-    classifiers      = [
+
+    keywords=['git', 'mingle', 'user acceptance criteria'],
+    classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Intended Audience :: Developers",
@@ -70,6 +70,6 @@ setup(
         "Operating System :: OS Independent",
         "License :: OSI Approved :: GPLv2 License",
     ],
-    zip_safe = False,
-    license  = "GPLv2",
+    zip_safe=False,
+    license="GPLv2",
 )

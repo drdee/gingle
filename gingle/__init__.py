@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Gingle: git <-> mingle integration for user acceptance criteria
-Copyright (C) 2013  Diederik van Liere (dvanliere@wikimedia.org), 
+Copyright (C) 2013  Diederik van Liere (dvanliere@wikimedia.org),
 Wikimedia Foundation
 
 This program is free software; you can redistribute it and/or
@@ -28,4 +28,3 @@ from gingle import main
 
 if __name__ == '__main__':
     main()
-

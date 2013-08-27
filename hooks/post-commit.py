@@ -22,38 +22,78 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import subprocess
 import re
+import requests
 
 from gingle import main as gingle
 
 mingle_task = re.compile('#(finish|for)\s(\d{1,4}\.\d{1,2})', re.IGNORECASE)
 
-def parse_commit_msg(message):
+def get_git_root_folder():
+	cmd = ['git', 'rev-parse', '--show-toplevel']
+	root_folder = run_external_process(cmd)
+	return root_folder.replace('\n', '')		
+
+def determine_repo_type():
+	is_gerrit = False
+	github = None
+	root_folder = get_git_root_folder()
+	fh = open('%s/.git/config' % root_folder, 'r')
+	for line in fh:
+		if line.find('gerrit') > -1:
+			is_gerrit = True
+		if line.find('github.com') > -1:
+			github = line.replace('url =', '')
+			github = github.replace('.git', '')
+	fh.close()
+	return (is_gerrit, github)
+
+def create_link_to_commit(is_gerrit, github):
+	cmd = ['git', 'log', '--format="%H"', '-n', '1']
+	sha1 = run_external_process(cmd)
+	if is_gerrit:
+		request = requests.get('https://gerrit.wikimedia.org/r/changes/?q=commit:%s' % sha1)
+		text = request.text.replace('\n','')
+		if text == ")]}'[]" or request.json() == []:
+			return 'Could not find a gerrit patchset belonging to sha1: %s' % sha1
+		else:
+			return '%s%s' % ('https://gerrit.wikimedia.org/r/#/c/', request.json()['_number'])
+	elif github:
+		return '%s/commit/%s' % (github, sha1)
+	else:
+		return 'Could not determine repository type (github or gerrit).'
+		
+def parse_commit_msg():
 	'''
 	#for 704.1
 	#for 704.2
 	#finish 704.1
 	'''
+        is_gerrit, github = determine_repo_type()
+	link = create_link_to_commit(is_gerrit, github)
+	print link
+	
+	cmd = ['git', 'log', '--format="%s %b"', '-n', '1']
+	message = run_external_process(cmd)	
 	tasks = re.findall(mingle_task, message)
 	for task in tasks:
 		print task
 		func = task[0].lower()
 		feature_id = task[1]
 		if func == 'for':
-                        gingle(['modify', feature_id])
+                        gingle(['modify', link, feature_id])
 		elif func == 'finish':
-			gingle(['finish', feature_id])
+			gingle(['finish', link, feature_id])
 	
 
-def main():
-	cmd = ['git', 'log', '--format="%s %b"', '-n', '1']
+def run_external_process(cmd):
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	stdout, stderr = p.communicate()
 	if stderr:
 		print stderr
 		exit(-1)
 	else:
-		parse_commit_msg(stdout)
+		return stdout
 
 
 if __name__ == '__main__':
-	main()
+	parse_commit_msg()
