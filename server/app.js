@@ -24,14 +24,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // development only
 if ('development' == app.get('env')) {
-  app.use(express.errorHandler());
+    app.use(express.errorHandler());
 }
 
 app.get('/', routes.index);
 
 
 // get table with user acceptance criteria from mingle
-app.get('/:feature_id(\\d+)$', routes.feature_list);
+app.get('/card/:project/:cardId(\\d+)/list/criteria$', routes.cardListCriteria);
+app.post('/card/:project/:cardId(\\d+)/add/criteria$', routes.cardAddCriteria);
+app.post('/card/:project/:cardId(\\d+)/add/commit$', routes.cardAddCommit);
+app.post('/card/:project/:cardId(\\d+)/finish/criteria$', routes.cardFinishCriteria);
 
 // add user acceptance criteria to table in mingle
 //app.post('/:feature_id(\d+)$', function(req, res) {
@@ -40,5 +43,5 @@ app.get('/:feature_id(\\d+)$', routes.feature_list);
 console.log(app.routes)
 
 http.createServer(app).listen(app.get('port'), function(){
-  console.log('Express server listening on port ' + app.get('port'));
+    console.log('Express server listening on port ' + app.get('port'));
 });
