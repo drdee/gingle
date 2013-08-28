@@ -32,7 +32,27 @@ exports.cardListCriteria = function(req, res) {
  */
 exports.cardAddCriteria = function(req, res) {
     getMingleCard(req.params, function(mingleCard){
-        res.send('Not Implemented');
+	console.log(req.body.link);
+	var $table = $(mingleCard.acceptanceCriteriaTable);
+	var rowCount = $table.children('tr').length;
+	var row = $table.children('tr:nth-child(2)');
+	$(row.children('td')).each(function(index, elem) {
+		console.log(index, $(elem).html());
+		var $cell = $(this);
+		$cell.empty();
+		switch(index) {
+			case 0:
+				$cell.html(rowCount);
+			case 1: //Given
+				$cell.html(req.body.given);
+			case 2: //When
+				$cell.html(req.body.when);
+			case 3: //Then
+				$cell.html(req.body.then);
+		}
+	});
+	$table.append(row);
+        res.send($table.html());
     });
 };
 
