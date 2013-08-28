@@ -1,11 +1,14 @@
 require('longjohn'); // for long stack traces
+var querystring = require('querystring');
 var https = require('https');
 var $ = require('jquery');
 var xml2js = require('xml2js');
 var template = require('url-template');
+var config = require('../config');
 
 var options = {
     host: 'mingle.corp.wikimedia.org',
+    auth: config.username + ':' + config.password,
     path: template.parse('/api/v2/projects/{project}/cards/{cardId}.xml')
 };
 
@@ -22,7 +25,7 @@ exports.index = function(req, res){
  * /card/:project/:cardId(\\d+)/list/criteria$
  */
 exports.cardListCriteria = function(req, res) {
-    getMingleCard(req.params, function(mingleCard){
+    getMingleCard(res, req.params, function(mingleCard){
         res.send(mingleCard.acceptanceCriteria);
     });
 };
@@ -32,7 +35,7 @@ exports.cardListCriteria = function(req, res) {
  * /card/:project/:cardId(\\d+)/add/criteria$
  */
 exports.cardAddCriteria = function(req, res) {
-    getMingleCard(req.params, function(mingleCard){
+    getMingleCard(res, req.params, function(mingleCard){
         var i = mingleCard.acceptanceCriteria.push({
             "#": mingleCard.acceptanceCriteria.length,
             "Given": req.body.given,
@@ -42,7 +45,26 @@ exports.cardAddCriteria = function(req, res) {
             "Comment": ""
         });
         var table = acceptanceCriteriaTableFromArray(mingleCard.acceptanceCriteria);
-        res.send(getOuterHtml(table));
+        var description = $(mingleCard.description[0]);
+        description[mingleCard.tableIndex] = $(getOuterHtml(table));
+        var descriptionHtml = '';
+        for (var i = 0; i < description.length; i++){
+            descriptionHtml += getOuterHtml(description[i]);
+        }
+        var saveData = 'card[description]=' + encodeURIComponent(descriptionHtml);
+        saveMingleCard(req.params, saveData, function(statusCode){
+            var success = statusCode == 200;
+            if (success) {
+                res.send(
+                    'New Criteria Created Successfully:\n' +
+                    'Given ' + req.body.given +
+                    ' When ' + req.body.when +
+                    ' Then ' + req.body.then
+                );
+            } else {
+                res.send('There was a problem.  Status Code: ' + statusCode);
+            }
+        })
     });
 };
 
@@ -51,7 +73,7 @@ exports.cardAddCriteria = function(req, res) {
  * /card/:project/:cardId(\\d+)/add/commit$
  */
 exports.cardAddCommit = function(req, res) {
-    getMingleCard(req.params, function(mingleCard){
+    getMingleCard(res, req.params, function(mingleCard){
         res.send('Not Implemented');
     });
 };
@@ -61,13 +83,13 @@ exports.cardAddCommit = function(req, res) {
  * /card/:project/:cardId(\\d+)/finish/criteria$
  */
 exports.cardFinishCriteria = function(req, res) {
-    getMingleCard(req.params, function(mingleCard){
+    getMingleCard(res, req.params, function(mingleCard){
         res.send('Not Implemented');
     });
 };
 
 
-function getMingleCard(params, callback) {
+function getMingleCard(res, params, callback) {
     var mingleRequest = $.extend({}, options, {
         path: options.path.expand(params)
     });
@@ -78,18 +100,23 @@ function getMingleCard(params, callback) {
         res2.on('data', function(chunk) {
             xml += chunk;
         }).on('error', function(e) {
-            console.log('ERROR: ' + e.message);
-        }).on('end', function(){
+            console.error('ERROR: ' + e.message);
+        }).on('end', function(res3){
             xml2js.parseString(xml, function(errXML, result){
-                var mingleCard = $.extend(
-                    {},
-                    result.card,
-                    getAcceptanceCriteriaTable(result.card.description[0])
-                );
-                callback.call(callback, mingleCard);
+                if (result && result.card) {
+                    var mingleCard = $.extend(
+                        {},
+                        result.card,
+                        getAcceptanceCriteriaTable(result.card.description[0])
+                    );
+                    callback.call(callback, mingleCard);
+                } else {
+                    res.send('Problem parsing or accessing Mingle (make sure config.json is set properly).');
+                }
             });
         });
     });
+    get.end();
 }
 
 function getAcceptanceCriteriaTable(mingleCardDescription) {
@@ -97,13 +124,15 @@ function getAcceptanceCriteriaTable(mingleCardDescription) {
     // find the table
     var titleFound = false;
     var table = null;
+    var tableIndex = -1;
     $(mingleCardDescription).each(function(i){
         if (titleFound) {
             if ($(this).is('table')) {
                 table = this;
+                tableIndex = i;
                 return false;
             } else if ($(this).is('h1')) {
-                console.log('not found');
+                console.warn('not found');
                 return false;
             }
         }
@@ -115,7 +144,8 @@ function getAcceptanceCriteriaTable(mingleCardDescription) {
     // return both results from above
     return {
         acceptanceCriteriaTable: getOuterHtml(table),
-        acceptanceCriteria: acceptanceCriteriaArrayFromTable(table)
+        acceptanceCriteria: acceptanceCriteriaArrayFromTable(table),
+        tableIndex: tableIndex
     };
 }
 
@@ -162,4 +192,22 @@ function acceptanceCriteriaTableFromArray(criteria){
 
 function getOuterHtml(element){
     return $(element).wrap('<div>').parent().html();
+}
+
+function saveMingleCard(params, data, callback){
+    var mingleRequest = $.extend({}, options, {
+        path: options.path.expand({project: 'analytics', cardId: '1112'}),
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': data.length
+        }
+    });
+    
+    var put = https.request(mingleRequest, function(res) {
+        callback.call(callback, res.statusCode);
+    });
+    put.write(data);
+    console.log(data);
+    put.end();
 }
