@@ -33,15 +33,15 @@ exports.cardListCriteria = function(req, res) {
  */
 exports.cardAddCriteria = function(req, res) {
     getMingleCard(req.params, function(mingleCard){
-        var table = $(mingleCard.acceptanceCriteriaTable);
-        var newRow = $('tr');
-        newRow.append('td').text(mingleCard.acceptanceCriteria.length + 1);
-        newRow.append('td').text(req.body.given);
-        newRow.append('td').text(req.body.when);
-        newRow.append('td').text(req.body.then);
-        newRow.append('td');
-        newRow.append('td');
-        table.append(newRow);
+        var i = mingleCard.acceptanceCriteria.push({
+            "#": mingleCard.acceptanceCriteria.length,
+            "Given": req.body.given,
+            "When": req.body.when,
+            "Then": req.body.then,
+            "Approved": "",
+            "Comment": ""
+        });
+        var table = acceptanceCriteriaTableFromArray(mingleCard.acceptanceCriteria);
         res.send(getOuterHtml(table));
     });
 };
@@ -112,7 +112,15 @@ function getAcceptanceCriteriaTable(mingleCardDescription) {
         }
     });
     
-    // parse the table into an array of objects
+    // return both results from above
+    return {
+        acceptanceCriteriaTable: getOuterHtml(table),
+        acceptanceCriteria: acceptanceCriteriaArrayFromTable(table)
+    };
+}
+
+// parse the table into an array of objects
+function acceptanceCriteriaArrayFromTable(table){
     var acceptanceCriteria = [];
     $('tr', $(table)).each(function(i){
         acceptanceCriteria[i] = {};
@@ -127,13 +135,29 @@ function getAcceptanceCriteriaTable(mingleCardDescription) {
             });
         }
     });
-    console.log(acceptanceCriteria);
-    
-    // return both results from above
-    return {
-        acceptanceCriteriaTable: getOuterHtml(table),
-        acceptanceCriteria: acceptanceCriteria
-    };
+    return acceptanceCriteria;
+}
+
+// render an array of criteria as a table (with headers as the 0th row)
+function acceptanceCriteriaTableFromArray(criteria){
+    var table = $('<table><tbody></tbody></table>');
+    if (criteria && criteria.length > 0) {
+        var header = $('<tr></tr>');
+        for (i in criteria[0]){
+            header.append($('<th></th>').text(criteria[0][i]));
+        }
+        table.find('tbody').append(header);
+    }
+    if (criteria && criteria.length > 1) {
+        for (var c = 1; c < criteria.length; c++){
+            var row = $('<tr></tr>');
+            for (i in criteria[0]){
+                row.append($('<td></td>').text(criteria[c][criteria[0][i]]));
+            }
+            table.find('tbody').append(row);
+        }
+    }
+    return table;
 }
 
 function getOuterHtml(element){
