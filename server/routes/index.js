@@ -35,7 +35,7 @@ exports.cardAddCriteria = function(req, res) {
     getMingleCard(req.params, function(mingleCard){
         var table = $(mingleCard.acceptanceCriteriaTable);
         var newRow = $('tr');
-        newRow.append('td').text(mingleCard.acceptanceCriteria.length);
+        newRow.append('td').text(mingleCard.acceptanceCriteria.length + 1);
         newRow.append('td').text(req.body.given);
         newRow.append('td').text(req.body.when);
         newRow.append('td').text(req.body.then);

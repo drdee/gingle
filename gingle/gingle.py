@@ -73,9 +73,9 @@ def main(cli_args=None):
     subparser_list.set_defaults(func=list_user_acceptance_criteria)
 
     subparser_add = subparsers.add_parser('add', help='')
-    subparser_add.add_argument('--given', help='')
-    subparser_add.add_argument('--when', help='')
-    subparser_add.add_argument('--then', help='')
+    subparser_add.add_argument('given', help='')
+    subparser_add.add_argument('when', help='')
+    subparser_add.add_argument('then', help='')
     subparser_add.set_defaults(func=add_user_criteria)
 
     subparser_modify = subparsers.add_parser('modify', help='')
