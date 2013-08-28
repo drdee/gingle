@@ -21,43 +21,43 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
 import requests
+import json
 from BeautifulSoup import BeautifulSoup
 
 server = 'http://localhost:3000'
 
 
 def list_user_acceptance_criteria(args):
-    feature_id = args.feature_id
-    response = requests.get('%s/%s' % (server, feature_id))
-    soup = BeautifulSoup(response.text)
-    table = soup.find('tbody')
-    rows = table.findAll('tr')
-    for tr in rows:
-        cols = tr.findAll('td')
-        for td in cols:
-            text = ''.join(td.find(text=True))
-            text = text.replace('&nbsp;', ' ')
-            print text + ' | ',
-        print
+    response = requests.get('{0}/card/analytics/{1}/list/criteria'.format(
+        server,
+        args.card
+    ))
+    print(response.text)
 
 
 def add_user_criteria(args):
-    feature_id = args.feature_id
-    payload = {'feature_id': feature_id}
-    response = requests.post('%s/%s' % (server, feature_id), payload)
-    print response.text
+    payload = {
+        'given': args.given,
+        'when': args.when,
+        'then': args.then,
+    }
+    response = requests.post('{0}/card/analytics/{1}/add/criteria'.format(
+        server,
+        args.card
+    ), payload)
+    print(response.text)
 
 
 def modify_user_criteria(args):
     try:
-        feature_id, task_id = args.feature_id.split('.')
+        card, task_id = args.card.split('.')
     except ValueError:
         print '''You forgot to add the task id that you want to modify.
-The correct format is <feature_id>.<task_id>'''
+The correct format is <card>.<task_id>'''
         exit(-1)
-    payload = {'feature_id': feature_id, 'task_id': task_id, 'link': args.link}
+    payload = {'card': card, 'task_id': task_id, 'link': args.link}
     response = requests.post('%s/%s' % (
-        server, payload.get('feature_id')), payload)
+        server, payload.get('card')), payload)
     print response.text
 
 
@@ -73,6 +73,9 @@ def main(cli_args=None):
     subparser_list.set_defaults(func=list_user_acceptance_criteria)
 
     subparser_add = subparsers.add_parser('add', help='')
+    subparser_add.add_argument('--given', help='')
+    subparser_add.add_argument('--when', help='')
+    subparser_add.add_argument('--then', help='')
     subparser_add.set_defaults(func=add_user_criteria)
 
     subparser_modify = subparsers.add_parser('modify', help='')
@@ -83,7 +86,7 @@ def main(cli_args=None):
     subparser_finish.add_argument('link', help='')
     subparser_finish.set_defaults(func=finish_user_criteria)
 
-    parser.add_argument('feature_id', help='')
+    parser.add_argument('card', help='')
     if cli_args:
         args = parser.parse_args(cli_args)
     else:

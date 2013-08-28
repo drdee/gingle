@@ -1,3 +1,4 @@
+require('longjohn'); // for long stack traces
 var https = require('https');
 var $ = require('jquery');
 var xml2js = require('xml2js');
@@ -22,7 +23,7 @@ exports.index = function(req, res){
  */
 exports.cardListCriteria = function(req, res) {
     getMingleCard(req.params, function(mingleCard){
-        res.send(mingleCard.acceptanceCriteriaTable);
+        res.send(mingleCard.acceptanceCriteria);
     });
 };
 
@@ -32,27 +33,16 @@ exports.cardListCriteria = function(req, res) {
  */
 exports.cardAddCriteria = function(req, res) {
     getMingleCard(req.params, function(mingleCard){
-	console.log(req.body.link);
-	var $table = $(mingleCard.acceptanceCriteriaTable);
-	var rowCount = $table.children('tr').length;
-	var row = $table.children('tr:nth-child(2)');
-	$(row.children('td')).each(function(index, elem) {
-		console.log(index, $(elem).html());
-		var $cell = $(this);
-		$cell.empty();
-		switch(index) {
-			case 0:
-				$cell.html(rowCount);
-			case 1: //Given
-				$cell.html(req.body.given);
-			case 2: //When
-				$cell.html(req.body.when);
-			case 3: //Then
-				$cell.html(req.body.then);
-		}
-	});
-	$table.append(row);
-        res.send($table.html());
+        var table = $(mingleCard.acceptanceCriteriaTable);
+        var newRow = $('tr');
+        newRow.append('td').text(mingleCard.acceptanceCriteria.length);
+        newRow.append('td').text(req.body.given);
+        newRow.append('td').text(req.body.when);
+        newRow.append('td').text(req.body.then);
+        newRow.append('td');
+        newRow.append('td');
+        table.append(newRow);
+        res.send(getOuterHtml(table));
     });
 };
 
@@ -91,33 +81,61 @@ function getMingleCard(params, callback) {
             console.log('ERROR: ' + e.message);
         }).on('end', function(){
             xml2js.parseString(xml, function(errXML, result){
-                var result = result.card.description[0];
-                var mingleCard = $.extend({}, result.card, {
-                    acceptanceCriteriaTable: parseMingleTable(result)
-                });
+                var mingleCard = $.extend(
+                    {},
+                    result.card,
+                    getAcceptanceCriteriaTable(result.card.description[0])
+                );
                 callback.call(callback, mingleCard);
             });
         });
     });
 }
 
-function parseMingleTable(mingleCardDescription) {
+function getAcceptanceCriteriaTable(mingleCardDescription) {
     
-    var bodyArray = $(mingleCardDescription);
-    var table = findAcceptanceCriteriaTable(bodyArray);
-    return $(table).html();
+    // find the table
+    var titleFound = false;
+    var table = null;
+    $(mingleCardDescription).each(function(i){
+        if (titleFound) {
+            if ($(this).is('table')) {
+                table = this;
+                return false;
+            } else if ($(this).is('h1')) {
+                console.log('not found');
+                return false;
+            }
+        }
+        if (!titleFound && $(this).is('h1:contains("Acceptance Criteria")')){
+            titleFound = true;
+        }
+    });
+    
+    // parse the table into an array of objects
+    var acceptanceCriteria = [];
+    $('tr', $(table)).each(function(i){
+        acceptanceCriteria[i] = {};
+        
+        if (i === 0){
+            $('th', $(this)).map(function(j, heading){
+                acceptanceCriteria[i][j] = $(heading).text();
+            });
+        } else {
+            $('td', $(this)).map(function(j, criteriaPiece){
+                acceptanceCriteria[i][acceptanceCriteria[0][j]] = $(criteriaPiece).text();
+            });
+        }
+    });
+    console.log(acceptanceCriteria);
+    
+    // return both results from above
+    return {
+        acceptanceCriteriaTable: getOuterHtml(table),
+        acceptanceCriteria: acceptanceCriteria
+    };
 }
 
-function findAcceptanceCriteriaTable(bodyArray){
-    var acceptanceH1 = -1;
-    for (i in bodyArray){
-        if (acceptanceH1 === -1 && $(bodyArray[i]).is('h1:contains("Acceptance Criteria")')){
-            acceptanceH1 = i;
-        } else if (acceptanceH1 !== -1) {
-            if ($(bodyArray[i]).is('table')){ console.log('found at ' + i + ' of ' + bodyArray.length); return bodyArray[i]; }
-            else if ($(bodyArray[i]).is('h1')) { console.log('not found'); break; }
-        }
-    }
-    console.log('not found');
-    return '';
+function getOuterHtml(element){
+    return $(element).wrap('<div>').parent().html();
 }

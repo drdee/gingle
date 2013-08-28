@@ -11,6 +11,7 @@
     "stylus": "*",
     "jquery": "*",
     "xml2js": "*",
-    "url-template": "*"
+    "url-template": "*",
+    "longjohn": "*"
   }
 }
