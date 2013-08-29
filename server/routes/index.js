@@ -89,7 +89,10 @@ exports.cardAddCommit = function(req, res) {
 exports.cardFinishCriteria = function(req, res) {
     getMingleCard(res, req.params, function(mingleCard){
         finishCriteria(mingleCard, req.body.task_id, req.body.link);
+        var progress = measureCardProgress(mingleCard);
         var saveData = makeDescriptionParameter(mingleCard);
+	saveData['card[properties][][name]'] = 'Progress';
+        saveData['card[properties][][value]'] = progress; 
         saveMingleCard(req.params, saveData, function(statusCode){
             var success = statusCode == 200;
             if (success) {
@@ -102,6 +105,18 @@ exports.cardFinishCriteria = function(req, res) {
         })
     });
 };
+
+
+function measureCardProgress(mingleCard) {
+    var total_tasks = mingleCard.acceptanceCriteria.length - 1;
+    var progress = 0.0;
+    for (var task in mingleCard.acceptanceCriteria) {
+        if (task['Comment'].indexOf('Done') > -1) {
+        progress += 1.0;
+        }
+    }
+    return progress / total_tasks;
+}
 
 
 function addCommitToCriteria(mingleCard, criteriaId, link){
