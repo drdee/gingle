@@ -110,12 +110,16 @@ exports.cardFinishCriteria = function(req, res) {
 function measureCardProgress(mingleCard) {
     var total_tasks = mingleCard.acceptanceCriteria.length - 1;
     var progress = 0.0;
-    for (var task in mingleCard.acceptanceCriteria) {
-        if (task['Comment'].indexOf('Done') > -1) {
-        progress += 1.0;
-        }
+    for (var criteria in mingleCard.acceptanceCriteria) {
+	if (criteria > 0) {
+            var task = mingleCard.acceptanceCriteria[criteria]['Comment'];
+            if (typeof task != 'undefined' && task.indexOf('Done') > -1) {
+                progress += 1.0;
+            }
+	}
     }
-    return progress / total_tasks;
+    console.log(total_tasks, progress, progress/total_tasks);
+    return (progress / total_tasks) * 100;
 }
 
 
