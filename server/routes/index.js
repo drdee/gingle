@@ -74,7 +74,28 @@ exports.cardAddCriteria = function(req, res) {
  */
 exports.cardAddCommit = function(req, res) {
     getMingleCard(res, req.params, function(mingleCard){
-        res.send('Not Implemented');
+	mingleCard.acceptanceCriteria[req.body.task_id]['Comment'] = $('<div>').append($('<a>').attr('href', req.body.link).text(req.body.link)).html();
+	console.log(mingleCard.acceptanceCriteria);
+
+        var table = acceptanceCriteriaTableFromArray(mingleCard.acceptanceCriteria);
+	
+        var description = $(mingleCard.description[0]);
+	description[mingleCard.tableIndex] = $(getOuterHtml(table));
+        var descriptionHtml = '';
+        for (var i = 0; i < description.length; i++){
+            descriptionHtml += getOuterHtml(description[i]);
+        }
+        var saveData = 'card[description]=' + encodeURIComponent(descriptionHtml);
+        saveMingleCard(req.params, saveData, function(statusCode){
+            var success = statusCode == 200;
+            if (success) {
+                res.send(
+                    'Added commit link: ' + req.body.link + '\n'
+                );
+            } else {
+                res.send('There was a problem.  Status Code: ' + statusCode);
+            }
+        })
     });
 };
 

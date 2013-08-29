@@ -56,8 +56,10 @@ def modify_user_criteria(args):
 The correct format is <card>.<task_id>'''
         exit(-1)
     payload = {'card': card, 'task_id': task_id, 'link': args.link}
-    response = requests.post('%s/%s' % (
-        server, payload.get('card')), payload)
+    response = requests.post('{0}/card/analytics/{1}/add/commit'.format(
+        server, 
+        payload.get('card')
+    ), payload)
     print response.text
 
 

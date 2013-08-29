@@ -36,10 +36,6 @@ app.post('/card/:project/:cardId(\\d+)/add/criteria$', routes.cardAddCriteria);
 app.post('/card/:project/:cardId(\\d+)/add/commit$', routes.cardAddCommit);
 app.post('/card/:project/:cardId(\\d+)/finish/criteria$', routes.cardFinishCriteria);
 
-// add user acceptance criteria to table in mingle
-//app.post('/:feature_id(\d+)$', function(req, res) {
-//    res.send('Feature ' + req.params.feature_id + 'requested');
-//});
 console.log(app.routes)
 
 http.createServer(app).listen(app.get('port'), function(){
