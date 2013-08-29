@@ -57,14 +57,25 @@ The correct format is <card>.<task_id>'''
         exit(-1)
     payload = {'card': card, 'task_id': task_id, 'link': args.link}
     response = requests.post('{0}/card/analytics/{1}/add/commit'.format(
-        server, 
+        server,
         payload.get('card')
     ), payload)
-    print response.text
+    print(response.text)
 
 
-def finish_user_criteria(namespace):
-    pass
+def finish_user_criteria(args):
+    try:
+        card, task_id = args.card.split('.')
+    except ValueError:
+        print '''You forgot to add the task id that you want to modify.
+The correct format is <card>.<task_id>'''
+        exit(-1)
+    payload = {'card': card, 'task_id': task_id, 'link': args.link}
+    response = requests.post('{0}/card/analytics/{1}/finish/criteria'.format(
+        server,
+        payload.get('card')
+    ), payload)
+    print(response.text)
 
 
 def main(cli_args=None):

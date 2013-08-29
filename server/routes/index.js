@@ -44,14 +44,7 @@ exports.cardAddCriteria = function(req, res) {
             "Approved": "",
             "Comment": ""
         });
-        var table = acceptanceCriteriaTableFromArray(mingleCard.acceptanceCriteria);
-        var description = $(mingleCard.description[0]);
-        description[mingleCard.tableIndex] = $(getOuterHtml(table));
-        var descriptionHtml = '';
-        for (var i = 0; i < description.length; i++){
-            descriptionHtml += getOuterHtml(description[i]);
-        }
-        var saveData = 'card[description]=' + encodeURIComponent(descriptionHtml);
+        var saveData = makeDescriptionParameter(mingleCard);
         saveMingleCard(req.params, saveData, function(statusCode){
             var success = statusCode == 200;
             if (success) {
@@ -74,18 +67,8 @@ exports.cardAddCriteria = function(req, res) {
  */
 exports.cardAddCommit = function(req, res) {
     getMingleCard(res, req.params, function(mingleCard){
-	mingleCard.acceptanceCriteria[req.body.task_id]['Comment'] = $('<div>').append($('<a>').attr('href', req.body.link).text(req.body.link)).html();
-	console.log(mingleCard.acceptanceCriteria);
-
-        var table = acceptanceCriteriaTableFromArray(mingleCard.acceptanceCriteria);
-	
-        var description = $(mingleCard.description[0]);
-	description[mingleCard.tableIndex] = $(getOuterHtml(table));
-        var descriptionHtml = '';
-        for (var i = 0; i < description.length; i++){
-            descriptionHtml += getOuterHtml(description[i]);
-        }
-        var saveData = 'card[description]=' + encodeURIComponent(descriptionHtml);
+        addCommitToCriteria(mingleCard, req.body.task_id, req.body.link);
+        var saveData = makeDescriptionParameter(mingleCard);
         saveMingleCard(req.params, saveData, function(statusCode){
             var success = statusCode == 200;
             if (success) {
@@ -105,9 +88,36 @@ exports.cardAddCommit = function(req, res) {
  */
 exports.cardFinishCriteria = function(req, res) {
     getMingleCard(res, req.params, function(mingleCard){
-        res.send('Not Implemented');
+        finishCriteria(mingleCard, req.body.task_id, req.body.link);
+        var saveData = makeDescriptionParameter(mingleCard);
+        saveMingleCard(req.params, saveData, function(statusCode){
+            var success = statusCode == 200;
+            if (success) {
+                res.send(
+                    'Finished: ' + req.body.task_id + '\n'
+                );
+            } else {
+                res.send('There was a problem.  Status Code: ' + statusCode);
+            }
+        })
     });
 };
+
+
+function addCommitToCriteria(mingleCard, criteriaId, link){
+    mingleCard.acceptanceCriteria[criteriaId]['Comment'] += getOuterHtml(
+        $('<a></a>').attr('href', link).text(link)
+    ) + ', ';
+}
+
+
+function finishCriteria(mingleCard, criteriaId, link){
+    var comment = mingleCard.acceptanceCriteria[criteriaId]['Comment'];
+    if (comment.toLowerCase().indexOf('(done)') < 0){
+        mingleCard.acceptanceCriteria[criteriaId]['Comment'] = '(Done)&nbsp;&nbsp;' + comment;
+    }
+    addCommitToCriteria(mingleCard, criteriaId, link);
+}
 
 
 function getMingleCard(res, params, callback) {
@@ -182,7 +192,7 @@ function acceptanceCriteriaArrayFromTable(table){
             });
         } else {
             $('td', $(this)).map(function(j, criteriaPiece){
-                acceptanceCriteria[i][acceptanceCriteria[0][j]] = $(criteriaPiece).text();
+                acceptanceCriteria[i][acceptanceCriteria[0][j]] = $(criteriaPiece).html();
             });
         }
     });
@@ -203,7 +213,7 @@ function acceptanceCriteriaTableFromArray(criteria){
         for (var c = 1; c < criteria.length; c++){
             var row = $('<tr></tr>');
             for (i in criteria[0]){
-                row.append($('<td></td>').text(criteria[c][criteria[0][i]]));
+                row.append($('<td></td>').html(criteria[c][criteria[0][i]]));
             }
             table.find('tbody').append(row);
         }
@@ -213,6 +223,17 @@ function acceptanceCriteriaTableFromArray(criteria){
 
 function getOuterHtml(element){
     return $(element).wrap('<div>').parent().html();
+}
+
+function makeDescriptionParameter(mingleCard){
+    var table = acceptanceCriteriaTableFromArray(mingleCard.acceptanceCriteria);
+    var description = $(mingleCard.description[0]);
+    description[mingleCard.tableIndex] = $(getOuterHtml(table));
+    var descriptionHtml = '';
+    for (var i = 0; i < description.length; i++){
+        descriptionHtml += getOuterHtml(description[i]);
+    }
+    return 'card[description]=' + encodeURIComponent(descriptionHtml);
 }
 
 function saveMingleCard(params, data, callback){
@@ -229,6 +250,5 @@ function saveMingleCard(params, data, callback){
         callback.call(callback, res.statusCode);
     });
     put.write(data);
-    console.log(data);
     put.end();
 }
