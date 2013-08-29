@@ -25,10 +25,20 @@ Installation is straightforward and like any other python module:
 sudo python setup.py install
 ```
 
+Once you have installed gingle, then copy the post-commit.py file to /git/repo/.git/hooks
 
 ## Installation Server Side
 
-
+- To install Node.js follow the instructions from https://github.com/joyent/node/wiki/Installation
+- Install npm
+```bash
+curl https://npmjs.org/install.sh | sh
+```
+- Edit config.json and add your Mingle username and password.
+- Run nodejs app
+```bash
+node app.js
+```
 
 ## Usage
 
