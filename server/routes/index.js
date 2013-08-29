@@ -36,6 +36,13 @@ exports.cardListCriteria = function(req, res) {
  */
 exports.cardAddCriteria = function(req, res) {
     getMingleCard(res, req.params, function(mingleCard){
+        verifyColumnInMingleCard(mingleCard, '#');
+        verifyColumnInMingleCard(mingleCard, 'Given');
+        verifyColumnInMingleCard(mingleCard, 'When');
+        verifyColumnInMingleCard(mingleCard, 'Then');
+        verifyColumnInMingleCard(mingleCard, 'Approved');
+        verifyColumnInMingleCard(mingleCard, 'Comment');
+        
         var i = mingleCard.acceptanceCriteria.push({
             "#": mingleCard.acceptanceCriteria.length,
             "Given": req.body.given,
@@ -67,8 +74,18 @@ exports.cardAddCriteria = function(req, res) {
  */
 exports.cardAddCommit = function(req, res) {
     getMingleCard(res, req.params, function(mingleCard){
+        if (mingleCard.acceptanceCriteria.length - 1 < req.body.task_id){
+            res.send('Criteria number ' + req.body.task_id + ' not found.');
+            return;
+        }
+        
+        verifyColumnInMingleCard(mingleCard, 'Comment');
         addCommitToCriteria(mingleCard, req.body.task_id, req.body.link);
-        var saveData = makeDescriptionParameter(mingleCard);
+        var saveData =
+            makeCardProgressParameter(mingleCard)
+            + '&' +
+            makeDescriptionParameter(mingleCard);
+        
         saveMingleCard(req.params, saveData, function(statusCode){
             var success = statusCode == 200;
             if (success) {
@@ -88,11 +105,18 @@ exports.cardAddCommit = function(req, res) {
  */
 exports.cardFinishCriteria = function(req, res) {
     getMingleCard(res, req.params, function(mingleCard){
+        if (mingleCard.acceptanceCriteria.length - 1 < req.body.task_id){
+            res.send('Criteria number ' + req.body.task_id + ' not found.');
+            return;
+        }
+        
+        verifyColumnInMingleCard(mingleCard, 'Comment');
         finishCriteria(mingleCard, req.body.task_id, req.body.link);
-        var progress = measureCardProgress(mingleCard);
-        var saveData = makeDescriptionParameter(mingleCard);
-	saveData['card[properties][][name]'] = 'Progress';
-        saveData['card[properties][][value]'] = progress; 
+        var saveData =
+            makeCardProgressParameter(mingleCard)
+            + '&' +
+            makeDescriptionParameter(mingleCard);
+        
         saveMingleCard(req.params, saveData, function(statusCode){
             var success = statusCode == 200;
             if (success) {
@@ -107,19 +131,21 @@ exports.cardFinishCriteria = function(req, res) {
 };
 
 
-function measureCardProgress(mingleCard) {
-    var total_tasks = mingleCard.acceptanceCriteria.length - 1;
+function makeCardProgressParameter(mingleCard) {
+    var totalTasks = mingleCard.acceptanceCriteria.length - 1;
     var progress = 0.0;
-    for (var criteria in mingleCard.acceptanceCriteria) {
-	if (criteria > 0) {
-            var task = mingleCard.acceptanceCriteria[criteria]['Comment'];
-            if (typeof task != 'undefined' && task.indexOf('Done') > -1) {
+    for (var c in mingleCard.acceptanceCriteria) {
+        if (c > 0) {
+            var criteria = mingleCard.acceptanceCriteria[c]['Comment'];
+            if (criteria && criteria.toLowerCase().indexOf('(done)') >= 0) {
                 progress += 1.0;
             }
-	}
+        }
     }
-    console.log(total_tasks, progress, progress/total_tasks);
-    return (progress / total_tasks) * 100;
+    progress = (progress / totalTasks) * 100;
+    var progressParameter =
+        'card[properties][][name]=progress&card[properties][][value]=' + progress;
+    return progressParameter;
 }
 
 
@@ -167,6 +193,23 @@ function getMingleCard(res, params, callback) {
         });
     });
     get.end();
+}
+
+function saveMingleCard(params, data, callback){
+    var mingleRequest = $.extend({}, options, {
+        path: options.path.expand({project: 'analytics', cardId: '1112'}),
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': data.length
+        }
+    });
+    
+    var put = https.request(mingleRequest, function(res) {
+        callback.call(callback, res.statusCode);
+    });
+    put.write(data);
+    put.end();
 }
 
 function getAcceptanceCriteriaTable(mingleCardDescription) {
@@ -255,19 +298,27 @@ function makeDescriptionParameter(mingleCard){
     return 'card[description]=' + encodeURIComponent(descriptionHtml);
 }
 
-function saveMingleCard(params, data, callback){
-    var mingleRequest = $.extend({}, options, {
-        path: options.path.expand({project: 'analytics', cardId: '1112'}),
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': data.length
+function verifyColumnInMingleCard(mingleCard, heading){
+    var headingExists = false;
+    for (i in mingleCard.acceptanceCriteria[0]){
+        var thisHeading = mingleCard.acceptanceCriteria[0][i].toLowerCase().trim();
+        headingExists = thisHeading === heading.toLowerCase().trim();
+        if (headingExists) { break; }
+    }
+    if (!headingExists){
+        mingleCard.acceptanceCriteria[0][nextColumnInMingleCard(mingleCard)] = heading;
+        
+        for (var c = 1; c < mingleCard.acceptanceCriteria.length; c++){
+            mingleCard.acceptanceCriteria[c][heading] = '';
         }
-    });
-    
-    var put = https.request(mingleRequest, function(res) {
-        callback.call(callback, res.statusCode);
-    });
-    put.write(data);
-    put.end();
+    }
+}
+
+function nextColumnInMingleCard(mingleCard){
+    var max = 0;
+    for (heading in mingleCard.acceptanceCriteria[0]){
+        var index = mingleCard.acceptanceCriteria[0][heading];
+        max = Math.max(max, index);
+    }
+    return max;
 }
