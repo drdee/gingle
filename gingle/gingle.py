@@ -25,6 +25,13 @@ import json
 from BeautifulSoup import BeautifulSoup
 
 
+def get_auth_credentials():
+    auth = (
+    'username',
+    'token',
+    )
+
+
 def list_user_acceptance_criteria(args):
     response = requests.get('{0}/card/analytics/{1}/list/criteria'.format(
         args.server,
@@ -65,7 +72,7 @@ def finish_user_criteria(args):
     try:
         card, task_id = args.card.split('.')
     except ValueError:
-        print '''You forgot to add the task id that you want to modify.
+        print '''You forgot to add the card and task id that you want to modify.
 The correct format is <card>.<task_id>'''
         exit(-1)
     payload = {'card': card, 'task_id': task_id, 'link': args.link}

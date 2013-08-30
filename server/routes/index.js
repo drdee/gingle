@@ -197,7 +197,7 @@ function getMingleCard(res, params, callback) {
 
 function saveMingleCard(params, data, callback){
     var mingleRequest = $.extend({}, options, {
-        path: options.path.expand({project: 'analytics', cardId: '1112'}),
+        path: options.path.expand({project: 'analytics', cardId: params.cardId}),
         method: 'PUT',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
