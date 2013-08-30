@@ -24,12 +24,10 @@ import requests
 import json
 from BeautifulSoup import BeautifulSoup
 
-server = 'http://localhost:3000'
-
 
 def list_user_acceptance_criteria(args):
     response = requests.get('{0}/card/analytics/{1}/list/criteria'.format(
-        server,
+        args.server,
         args.card
     ))
     print(response.text)
@@ -42,7 +40,7 @@ def add_user_criteria(args):
         'then': args.then,
     }
     response = requests.post('{0}/card/analytics/{1}/add/criteria'.format(
-        server,
+        args.server,
         args.card
     ), payload)
     print(response.text)
@@ -57,7 +55,7 @@ The correct format is <card>.<task_id>'''
         exit(-1)
     payload = {'card': card, 'task_id': task_id, 'link': args.link}
     response = requests.post('{0}/card/analytics/{1}/add/commit'.format(
-        server,
+        args.server,
         payload.get('card')
     ), payload)
     print(response.text)
@@ -72,7 +70,7 @@ The correct format is <card>.<task_id>'''
         exit(-1)
     payload = {'card': card, 'task_id': task_id, 'link': args.link}
     response = requests.post('{0}/card/analytics/{1}/finish/criteria'.format(
-        server,
+        args.server,
         payload.get('card')
     ), payload)
     print(response.text)
@@ -100,6 +98,7 @@ def main(cli_args=None):
     subparser_finish.set_defaults(func=finish_user_criteria)
 
     parser.add_argument('card', help='')
+    parser.add_argument('-s', '--server', default='http://gingle.wmflabs.org', help='')
     if cli_args:
         args = parser.parse_args(cli_args)
     else:
