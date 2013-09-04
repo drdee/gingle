@@ -23,20 +23,25 @@ import argparse
 import requests
 import json
 from BeautifulSoup import BeautifulSoup
-
+import ConfigParser
 
 def get_auth_credentials():
+    config = ConfigParser.ConfigParser()
+    config.read('gingle.ini')    
     auth = (
-    'username',
-    'token',
+    config.get('auth', 'username'),
+    config.get('auth', 'password')
     )
-
+    return auth
 
 def list_user_acceptance_criteria(args):
     response = requests.get('{0}/card/analytics/{1}/list/criteria'.format(
         args.server,
         args.card
-    ))
+        ),
+        auth=get_auth_credentials(),
+        verify=False
+    )
     print(response.text)
 
 
@@ -49,7 +54,11 @@ def add_user_criteria(args):
     response = requests.post('{0}/card/analytics/{1}/add/criteria'.format(
         args.server,
         args.card
-    ), payload)
+        ), 
+        payload=payload,
+        auth=get_auth_credentials(),
+        verify=False
+    )
     print(response.text)
 
 
@@ -64,7 +73,11 @@ The correct format is <card>.<task_id>'''
     response = requests.post('{0}/card/analytics/{1}/add/commit'.format(
         args.server,
         payload.get('card')
-    ), payload)
+        ), 
+        auth=get_auth_credentials(),
+        verify=False,    
+        payload=payload
+    )
     print(response.text)
 
 
@@ -79,7 +92,11 @@ The correct format is <card>.<task_id>'''
     response = requests.post('{0}/card/analytics/{1}/finish/criteria'.format(
         args.server,
         payload.get('card')
-    ), payload)
+        ), 
+        auth=get_auth_credentials(),
+        verify=False,
+        payload=payload
+    )
     print(response.text)
 
 
@@ -105,7 +122,7 @@ def main(cli_args=None):
     subparser_finish.set_defaults(func=finish_user_criteria)
 
     parser.add_argument('card', help='')
-    parser.add_argument('-s', '--server', default='http://gingle.wmflabs.org', help='')
+    parser.add_argument('-s', '--server', default='https://gingle.wmflabs.org', help='')
     if cli_args:
         args = parser.parse_args(cli_args)
     else:
