@@ -150,9 +150,14 @@ function makeCardProgressParameter(mingleCard) {
 
 
 function addCommitToCriteria(mingleCard, criteriaId, link){
-    mingleCard.acceptanceCriteria[criteriaId]['Comment'] += getOuterHtml(
-        $('<a></a>').attr('href', link).text(link)
-    ) + ', ';
+    if (link.indexOf('http') > -1) {
+        var short_link = link.substring(link.lastIndexOf("/"));
+        mingleCard.acceptanceCriteria[criteriaId]['Comment'] += getOuterHtml(
+            $('<a></a>').attr('href', link).text(short_link)
+        ) + ', ';
+    } else { 
+        mingleCard.acceptanceCriteria[criteriaId]['Comment'] += link + ', ';
+    }
 }
 
 

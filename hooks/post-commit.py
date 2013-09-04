@@ -45,8 +45,11 @@ def determine_repo_type():
             exit(-1)
 	for line in fh:
                 line = line.strip()
-		if line.find('gerrit') > -1:
-			is_gerrit = True
+		#FIXME: Disable linking to gerrit repo's now as
+                #post commit hooks will lead to links
+                #that don't work
+		#if line.find('gerrit') > -1:
+		#	is_gerrit = True
 		if line.find('github.com') > -1:
 			github = line.replace('url = ', '')
 			github = github.replace('.git', '')
