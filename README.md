@@ -32,16 +32,16 @@ Once you have installed gingle, then copy the post-commit.py file to /git/repo/.
 
 - To install Node.js follow the instructions from https://github.com/joyent/node/wiki/Installation
 - Install npm
-```bash
+```
 curl https://npmjs.org/install.sh | sh
 ```
 - Edit config.json and add your Mingle username and password.
 - Run nodejs app
-```bash
+```
 node app.js
 ```
 
-## Usage
+## Usage in git commit message
 
 To trigger the post-commit hook, you will have to add '#for <card_id>.<task_id>' in the git commit message.
 ATTENTION: if you use # as the first character of a line then git will ignore it because it will be treated as 
@@ -49,9 +49,23 @@ comment.
 
 This commit message would work
 
-```shell
+```
 Implementing foobar #for 822.1
 ```
 
 This will add a link to the commit (either in Gerrit or Github) that implemetns user acceptance criteria 1 in Mingle story card 822.
 
+## Usage on command line
+
+To list the user-acceptanace criteria, enter the following command
+```
+python gingle.py list 1112
+```
+This will output the criteria from Mingle card 1112
+
+To add a user-acceptance criteria, enter the following command
+```
+python gingle.py add 'Diederik loves Mingle' 'Analytics members use gingle' 'Diederik is a happy camper' 1112
+```
+it follows the given, when, then structure, given is first positonal argument, when is the second positional argument and then is the third positional argument.
+Put the arguments in quotation marks so it can be properly parsed.

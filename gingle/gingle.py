@@ -22,12 +22,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import argparse
 import requests
 import json
-from BeautifulSoup import BeautifulSoup
 import ConfigParser
+import os
+from BeautifulSoup import BeautifulSoup
 
 def get_auth_credentials():
+    path = os.path.join(os.path.expanduser('~'), '.gingle', 'gingle.ini') 
     config = ConfigParser.ConfigParser()
-    config.read('gingle.ini')    
+    config.read(path)    
     auth = (
     config.get('auth', 'username'),
     config.get('auth', 'password')
@@ -55,7 +57,7 @@ def add_user_criteria(args):
         args.server,
         args.card
         ), 
-        payload=payload,
+        data=payload,
         auth=get_auth_credentials(),
         verify=False
     )
@@ -76,7 +78,7 @@ The correct format is <card>.<task_id>'''
         ), 
         auth=get_auth_credentials(),
         verify=False,    
-        payload=payload
+        data=payload
     )
     print(response.text)
 
@@ -95,7 +97,7 @@ The correct format is <card>.<task_id>'''
         ), 
         auth=get_auth_credentials(),
         verify=False,
-        payload=payload
+        data=payload
     )
     print(response.text)
 

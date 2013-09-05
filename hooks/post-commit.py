@@ -84,13 +84,11 @@ def parse_commit_msg():
 	'''
         is_gerrit, github = determine_repo_type()
 	link = create_link_to_commit(is_gerrit, github)
-	print link
 	
 	cmd = ['git', 'log', '--format="%s %b"', '-n', '1']
 	message = run_external_process(cmd)	
 	tasks = re.findall(mingle_task, message)
 	for task in tasks:
-		print task
 		func = task[0].lower()
 		feature_id = task[1]
 		if func == 'for':
