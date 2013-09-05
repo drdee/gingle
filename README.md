@@ -1,5 +1,4 @@
-
-x## Background
+## Background
 Gingle is a small utility that the Analytics team at the Wikimedia Foundation uses to automatically add commit links to story cards. While mingle does have native support for Git integration, it only supports a single Git repo. The Analytics team uses many repos and we would like a more granular tracking of the progresss of individual story cards.
 
 Gingle consists of three parts
@@ -22,11 +21,31 @@ The nodejs app gets the Mingle card and can do the following:
 ## Installation Client Side
 
 Installation is straightforward and like any other python module:
-```bash
+```
 sudo python setup.py install
 ```
+Then 
+```
+mkdir /home/.gingle/
+touch /home/.gingle/gingle.ini
+```
+and with your favorite text editor add:
+```
+[auth]
+username=ask diederik/ottomata
+password=ask diederik/ottomata
+```
 
-Once you have installed gingle, then copy the post-commit.py file to /git/repo/.git/hooks
+Once you have installed gingle, then copy the post-commit.py file to either the hooks folder 
+of each indivdual git repo like /git/repo/.git/hooks or install it in the global git template folder like:
+```
+git config --global init.templatedir '~/.git_template'
+cp /path/to/gingle/hooks/post-commit.py ~/.git_template/post-commit
+```
+all future repo's will now include the gingle post-commit hook. For existing git repos run:
+```
+git init --template ~/.git_template 
+```
 
 ## Installation Server Side
 
