@@ -27,7 +27,18 @@ import requests
 
 from gingle import main as gingle
 
-mingle_task = re.compile('#(finish|for)\s(\d{1,4}\.\d{1,2})', re.IGNORECASE)
+'''
+Capture the following variants of mingle references
+analytics card 42
+analytics card #42
+analytics-card 42
+analytics-card #42
+Card: analytics 42
+Card: analytics-42
+Card:analytics#42
+'''
+mingle_task = re.compile('\\b([aA]nalytics\\s*[:-]?\\s*[cC]ard|[cC]ard\\s*[:-]?\\s*[aA]nalytics)\\s*\\#?\\s*(\\d+\\.\\d+)\\b', re.IGNORECASE)
+
 
 def get_git_root_folder():
 	cmd = ['git', 'rev-parse', '--show-toplevel']
@@ -77,19 +88,15 @@ def create_link_to_commit(is_gerrit, github):
 		return 'Could not determine repository type (github or gerrit).'
 		
 def parse_commit_msg():
-	'''
-	#for 704.1
-	#for 704.2
-	#finish 704.1
-	'''
         is_gerrit, github = determine_repo_type()
 	link = create_link_to_commit(is_gerrit, github)
 	
-	cmd = ['git', 'log', '--format="%s %b"', '-n', '1']
+	cmd = ['git', 'log', '--format="%B"', '-n', '1']
 	message = run_external_process(cmd)	
 	tasks = re.findall(mingle_task, message)
+        print tasks
 	for task in tasks:
-		func = task[0].lower()
+		func = 'for' #task[0].lower()
 		feature_id = task[1]
 		if func == 'for':
                         gingle(['modify', link, feature_id])
