@@ -29,90 +29,89 @@ from gingle import main as gingle
 
 '''
 Capture the following variants of mingle references
-analytics card 42
-analytics card #42
-analytics-card 42
-analytics-card #42
-Card: analytics 42
-Card: analytics-42
-Card:analytics#42
+analytics card 42.1
+analytics card #42.1
+analytics-card 42.1
+analytics-card #42.1
+Card: analytics 42.1
+Card: analytics-42.1
+Card:analytics#42.1
 '''
-mingle_task = re.compile('\\b([aA]nalytics\\s*[:-]?\\s*[cC]ard|[cC]ard\\s*[:-]?\\s*[aA]nalytics)\\s*\\#?\\s*(\\d+\\.\\d+)\\b', re.IGNORECASE)
+mingle_task = re.compile('\\b([aA]nalytics\\s*[:-]?\\s*[cC]ard|[cC]ard\\s*[:-]?\\s*[aA]nalytics)\\s*\\#?\\s*(\\d+\\.\\d+)\\s?([a-z]*)\\b')
 
 
 def get_git_root_folder():
-	cmd = ['git', 'rev-parse', '--show-toplevel']
-	root_folder = run_external_process(cmd)
-	return root_folder.replace('\n', '')		
+    cmd = ['git', 'rev-parse', '--show-toplevel']
+    root_folder = run_external_process(cmd)
+    return root_folder.replace('\n', '')        
 
 def determine_repo_type():
-	is_gerrit = False
-	github = None
-	root_folder = get_git_root_folder()
-        try:
-	    fh = open('%s/.git/config' % root_folder, 'r')
-        except IOError:
-            print 'Could not find git config.'
-            exit(-1)
-	for line in fh:
-                line = line.strip()
-		#FIXME: Disable linking to gerrit repo's now as
+    is_gerrit = False
+    github = None
+    root_folder = get_git_root_folder()
+    try:
+        fh = open('%s/.git/config' % root_folder, 'r')
+    except IOError:
+        print 'Could not find git config.'
+        exit(-1)
+    for line in fh:
+        line = line.strip()
+        #FIXME: Disable linking to gerrit repo's now as
                 #post commit hooks will lead to links
                 #that don't work
-		#if line.find('gerrit') > -1:
-		#	is_gerrit = True
-		if line.find('github.com') > -1:
-			github = line.replace('url = ', '')
-			github = github.replace('.git', '')
-	fh.close()
-	return (is_gerrit, github)
+        #if line.find('gerrit') > -1:
+        #   is_gerrit = True
+        if line.find('github.com') > -1:
+            github = line.replace('url = ', '')
+            github = github.replace('.git', '')
+    fh.close()
+    return (is_gerrit, github)
 
 def create_link_to_commit(is_gerrit, github):
-	cmd = ['git', 'log', '--format=%H', '-n', '1']
-	sha1 = run_external_process(cmd)
-	sha1 = sha1.strip()
-        if is_gerrit:
-		request = requests.get('https://gerrit.wikimedia.org/r/changes/?q=commit:%s' % sha1)
-		text = request.text.strip()
-                text = text.replace(")]}'\n", '')
-                json_response = json.loads(text);
-		if json_response == []:
-			return 'Could not find a gerrit patchset belonging to sha1: %s' % sha1
-		elif len(json_response) > 1:
-                        return 'Found more than 1 gerrit patchset belonging to sha1: %s' % sha1
-                else:
-			return '%s%s' % ('https://gerrit.wikimedia.org/r/#/c/', json_response[0]['_number'])
-	elif github:
-		return '%s/commit/%s' % (github, sha1)
-	else:
-		return 'Could not determine repository type (github or gerrit).'
-		
+    cmd = ['git', 'log', '--format=%H', '-n', '1']
+    sha1 = run_external_process(cmd)
+    sha1 = sha1.strip()
+    if is_gerrit:
+        request = requests.get('https://gerrit.wikimedia.org/r/changes/?q=commit:%s' % sha1)
+        text = request.text.strip()
+        text = text.replace(")]}'\n", '')
+        json_response = json.loads(text);
+        if json_response == []:
+            return 'Could not find a gerrit patchset belonging to sha1: %s' % sha1
+        elif len(json_response) > 1:
+            return 'Found more than 1 gerrit patchset belonging to sha1: %s' % sha1
+        else:
+            return '%s%s' % ('https://gerrit.wikimedia.org/r/#/c/', json_response[0]['_number'])
+    elif github:
+        return '%s/commit/%s' % (github, sha1)
+    else:
+        return 'Could not determine repository type (github or gerrit).'
+        
 def parse_commit_msg():
-        is_gerrit, github = determine_repo_type()
-	link = create_link_to_commit(is_gerrit, github)
-	
-	cmd = ['git', 'log', '--format="%B"', '-n', '1']
-	message = run_external_process(cmd)	
-	tasks = re.findall(mingle_task, message)
-        print tasks
-	for task in tasks:
-		func = 'for' #task[0].lower()
-		feature_id = task[1]
-		if func == 'for':
-                        gingle(['modify', link, feature_id])
-		elif func == 'finish':
-			gingle(['finish', link, feature_id])
-	
+    is_gerrit, github = determine_repo_type()
+    link = create_link_to_commit(is_gerrit, github)
+    
+    cmd = ['git', 'log', '--format="%B"', '-n', '1']
+    message = run_external_process(cmd) 
+    tasks = re.findall(mingle_task, message)
+    for task in tasks:
+        feature_id = task[1]
+        func = 'modify' if task[2] == None else task[2].lower()
+        if func == 'finish':
+            gingle(['finish', link, feature_id])
+        else:
+            gingle(['modify', link, feature_id])
+    
 
 def run_external_process(cmd):
-	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	stdout, stderr = p.communicate()
-	if stderr:
-		print stderr
-		exit(-1)
-	else:
-		return stdout
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    if stderr:
+        print stderr
+        exit(-1)
+    else:
+        return stdout
 
 
 if __name__ == '__main__':
-	parse_commit_msg()
+    parse_commit_msg()

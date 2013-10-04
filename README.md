@@ -26,8 +26,8 @@ sudo python setup.py install
 ```
 Then 
 ```
-mkdir /home/.gingle/
-touch /home/.gingle/gingle.ini
+mkdir /home/<username>/.gingle/
+touch /home/<username>/.gingle/gingle.ini
 ```
 and with your favorite text editor add:
 ```
@@ -69,10 +69,15 @@ comment.
 This commit message would work
 
 ```
-Implementing foobar #for 822.1
+Analytics card 822.1
 ```
 
-This will add a link to the commit (either in Gerrit or Github) that implemetns user acceptance criteria 1 in Mingle story card 822.
+This will add a link to the commit (either in Gerrit or Github) that implements user acceptance criteria 1 in Mingle story card 822.
+
+If you want to indicate that you finished a task then enter: 
+```
+Analytics card 822.1 finish
+```
 
 ## Usage on command line
 
