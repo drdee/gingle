@@ -7,11 +7,11 @@ Gingle consists of three parts
 - a node.js app
 
 
-       -----------         -----------        -----------
-       |  post   |  send   |         | send   |  nodejs |
-       | commit  |-------> | gingle  |------->|   app   |
-       |  hook   | commit  |         | data   |         |
-       -----------  msg    -----------        -----------
+    -----------         -----------        -----------
+    |  post   |  send   |         | send   |  nodejs |
+    | commit  |-------> | gingle  |------->|   app   |
+    |  hook   | commit  |         | data   |         |
+    -----------  msg    -----------        -----------
 
 The nodejs app gets the Mingle card and can do the following:
 - add a new user acceptance criteria to a Mingle card
