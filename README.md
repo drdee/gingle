@@ -1,5 +1,5 @@
 ## Background
-Gingle is a small utility that the Analytics team at the Wikimedia Foundation uses to automatically add commit links to story cards. While mingle does have native support for Git integration, it only supports a single Git repo. The Analytics team uses many repos and we would like a more granular tracking of the progresss of individual story cards.
+Gingle is a small utility that the Analytics team at the Wikimedia Foundation uses to automatically add commit links to story cards. While Mingle does have native support for Git integration, it only supports a single Git repo. The Analytics team uses many repos and we would like a more granular tracking of the progresss of individual story cards.
 
 Gingle consists of three parts
 - a Git post-commit hook
@@ -7,11 +7,11 @@ Gingle consists of three parts
 - a node.js app
 
 <pre>
-    -----------         -----------        -----------
-    |  post   |  send   |         | send   |  nodejs |
-    | commit  |-------> | gingle  |------->|   app   |
-    |  hook   | commit  |         | data   |         |
-    -----------  msg    -----------        -----------
+    -----------         -----------        -----------        -----------
+    |  post   |  send   |         | send   |  nodejs | update |         |
+    | commit  |-------> | gingle  |------->|   app   |------->|  mingle |
+    |  hook   | commit  |         | data   |         |  story |         |       
+    -----------  msg    -----------        -----------        -----------
 </pre>
 
 The nodejs app gets the Mingle card and can do the following:
@@ -61,24 +61,24 @@ curl https://npmjs.org/install.sh | sh
 node app.js
 ```
 
-## Usage in git commit message
+## Usage in Git commit message
 
-To trigger the post-commit hook, you will have to add '#for <card_id>.<task_id>' in the git commit message.
-ATTENTION: if you use # as the first character of a line then git will ignore it because it will be treated as 
-comment.
+To trigger the post-commit hook, you will have to add 'Analytics card <card_id>.<task_id>' in the Git commit message.
 
-This commit message would work
 
 ```
 Analytics card 822.1
 ```
 
-This will add a link to the commit (either in Gerrit or Github) that implements user acceptance criteria 1 in Mingle story card 822.
+This will add a link to the commit in Github that implements user acceptance criteria 1 in Mingle story card 822.
 
 If you want to indicate that you finished a task then enter: 
 ```
 Analytics card 822.1 finish
 ```
+
+## Why are you not linking to Gerrit?
+The reason we are not linking directly to the Gerrit patchset is because when the post-commit hook is triggered the Gerrit patchset id has not yet been generated and hence it's unknown.
 
 ## Usage on command line
 
