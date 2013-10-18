@@ -24,6 +24,7 @@ import subprocess
 import re
 import json
 import requests
+import urlparse
 
 from gingle import main as gingle
 
@@ -47,50 +48,66 @@ def get_git_root_folder():
 
 def determine_repo_type():
     is_gerrit = False
-    github = None
+    is_github = False
+    repo_url = ''
     root_folder = get_git_root_folder()
     try:
         fh = open('%s/.git/config' % root_folder, 'r')
     except IOError:
-        print 'Could not find git config.'
+        print 'Could not find git config, is this folder part of a git project?'
         exit(-1)
     for line in fh:
         line = line.strip()
-        #FIXME: Disable linking to gerrit repo's now as
-                #post commit hooks will lead to links
-                #that don't work
-        #if line.find('gerrit') > -1:
-        #   is_gerrit = True
+        if line.find('gerrit.wikimedia.org') > -1:
+            is_gerrit = True
+            repo_url = line
         if line.find('github.com') > -1:
-            github = line.replace('url = ', '')
-            github = github.replace('.git', '')
+            is_github = True
+            repo_url = line
     fh.close()
-    return (is_gerrit, github)
 
-def create_link_to_commit(is_gerrit, github):
+    repo_names = {
+        'analytics-kraken': 'kraken',
+        'analytics-limn': 'limn',
+    }
+
+    repo_url = repo_url.replace('.git', '')
+    if is_gerrit:
+        repo_url = repo_url.replace('url = ssh://', 'https://')
+        print repo_url
+
+        repo_url = urlparse.urlparse(repo_url)
+        path = repo_url.path[1:].replace('/', '-')
+        path = repo_names.get(path, path)
+        repo_url = 'https://github.com/wikimedia/%s' % (path)
+    elif is_github:   
+        repo_url = repo_url.replace('url = ', '')
+    return repo_url
+
+def create_link_to_commit(repo_url):
     cmd = ['git', 'log', '--format=%H', '-n', '1']
     sha1 = run_external_process(cmd)
     sha1 = sha1.strip()
-    if is_gerrit:
-        request = requests.get('https://gerrit.wikimedia.org/r/changes/?q=commit:%s' % sha1)
-        text = request.text.strip()
-        text = text.replace(")]}'\n", '')
-        json_response = json.loads(text);
-        if json_response == []:
-            return 'Could not find a gerrit patchset belonging to sha1: %s' % sha1
-        elif len(json_response) > 1:
-            return 'Found more than 1 gerrit patchset belonging to sha1: %s' % sha1
-        else:
-            return '%s%s' % ('https://gerrit.wikimedia.org/r/#/c/', json_response[0]['_number'])
-    elif github:
-        return '%s/commit/%s' % (github, sha1)
+    #if is_gerrit:
+    #    request = requests.get('https://gerrit.wikimedia.org/r/changes/?q=commit:%s' % sha1)
+    #    text = request.text.strip()
+    #    text = text.replace(")]}'\n", '')
+    #    json_response = json.loads(text);
+    #    if json_response == []:
+    #        return 'Could not find a gerrit patchset belonging to sha1: %s' % sha1
+    #    elif len(json_response) > 1:
+    #        return 'Found more than 1 gerrit patchset belonging to sha1: %s' % sha1
+    #    else:
+    #        return '%s%s' % ('https://gerrit.wikimedia.org/r/#/c/', json_response[0]['_number'])
+    if repo_url:
+        return '%s/commit/%s' % (repo_url, sha1)
     else:
         return 'Could not determine repository type (github or gerrit).'
         
 def parse_commit_msg():
-    is_gerrit, github = determine_repo_type()
-    link = create_link_to_commit(is_gerrit, github)
-    
+    repo_url = determine_repo_type()
+    link = create_link_to_commit(repo_url)
+    print link
     cmd = ['git', 'log', '--format="%B"', '-n', '1']
     message = run_external_process(cmd) 
     tasks = re.findall(mingle_task, message)
